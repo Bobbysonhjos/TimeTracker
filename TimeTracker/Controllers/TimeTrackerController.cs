@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TimeTracker.Data;
 using TimeTracker.DTO;
 using TimeTracker.Entities;
@@ -21,23 +22,41 @@ namespace TimeTracker.Controllers
         }
 
         [HttpGet]
-        public IActionResult Get()
+        public IActionResult Get(int? projectid = null)
         {
+            if (projectid is not null)
+            {
+
+                var project = _context.Projects.Include(x => x.TimeTrackings)
+                    .FirstOrDefault(x => x.ProjectId == projectid);
+                return Ok(project.TimeTrackings.Select(x => new TimeTrackingDTO()
+                {
+                    Id = x.Id,
+                    Date = x.Date,
+                    NumberofMinutes = x.NumberofMinutes,
+                    Description = x.Description,
+                    ProjectId = x.Project.ProjectId,
+
+                }).ToList());
+
+
+            }
             return Ok(_context.TimeTracking.Select(x => new TimeTrackingDTO
             {
                Id = x.Id,
                Date = x.Date,
                NumberofMinutes = x.NumberofMinutes,
                Description = x.Description,
-               ProjectId = x.ProjectId,
+               ProjectId = x.Project.ProjectId,
 
             }).ToList());
+            
         }
 
         [HttpGet("{timeTrackingid}")]
         public IActionResult GetOne(Guid timeTrackingid)
         {
-            var result = _context.TimeTracking.Find(timeTrackingid);
+            var result = _context.TimeTracking.Include(x=>x.Project).FirstOrDefault(x=>x.Id==timeTrackingid);
             if (result == null)
                 return NotFound();
             var timeTrackingDTO = new TimeTrackingDTO
@@ -46,7 +65,7 @@ namespace TimeTracker.Controllers
                 Date = result.Date,
                 NumberofMinutes = result.NumberofMinutes,
                 Description = result.Description,
-                ProjectId = result.ProjectId,
+                ProjectId = result.Project.ProjectId,
             };
             return Ok(timeTrackingDTO);
 
@@ -72,28 +91,32 @@ namespace TimeTracker.Controllers
         [HttpPost]
         public IActionResult Create(CreateTimeTrackingModel timeTracking)
         {
-            var projectExists = _context.Projects.Any(e => e.ProjectId == timeTracking.ProjectId);
-            if (!projectExists)
+            var project = _context.Projects.Find(timeTracking.ProjectId);
+            if (project is null)
                 return NotFound();
             var time = new TimeTracking
             {
+                
                 Date = timeTracking.Date,
                 Description = timeTracking.Description,
-                ProjectId = timeTracking.ProjectId,
+                Project = project,
                 NumberofMinutes = timeTracking.NumberofMinutes,
 
             };
-            
-            
+
+            _context.TimeTracking.Add(time);
+            _context.SaveChanges();
+
+
             var timeTrackingDTO = new TimeTrackingDTO
             {
+                Id = time.Id,
                 Date = timeTracking.Date,
                 Description = timeTracking.Description,
                 ProjectId = timeTracking.ProjectId,
                 NumberofMinutes = timeTracking.NumberofMinutes
             };
-            _context.TimeTracking.Add(time);
-            _context.SaveChanges();
+            
             return CreatedAtAction(nameof(GetOne), new{ timeTrackingid = time.Id}, timeTrackingDTO);
 
                 

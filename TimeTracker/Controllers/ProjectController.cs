@@ -2,6 +2,7 @@
 using TimeTracker.Data;
 using TimeTracker.DTO;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TimeTracker.Entities;
 
 
@@ -25,11 +26,11 @@ namespace TimeTracker.Controllers
         {
             if (customerid is not null)
             {
-                return Ok(_context.Projects.Where(x => x.CustomerId == customerid).Select(p => new ProjectDTO
+                return Ok(_context.Projects.Include(x=>x.Customer).Where(x => x.Customer.Id == customerid).Select(p => new ProjectDTO
                 {
                     ProjectId = p.ProjectId,
                     ProjectName = p.ProjectName,
-                    CustomerId = p.CustomerId,
+                    CustomerId = p.Customer.Id,
 
                 }).ToList());
             }
@@ -37,7 +38,7 @@ namespace TimeTracker.Controllers
             {
                 ProjectId = p.ProjectId,
                 ProjectName = p.ProjectName,
-                CustomerId = p.CustomerId,
+                CustomerId = p.Customer.Id,
 
             }).ToList());
         }
@@ -71,7 +72,7 @@ namespace TimeTracker.Controllers
             if (cus == null) return NotFound();
             var p = new Project
             {
-                CustomerId = project.CustomerId,
+                Customer = cus,
                 ProjectName = project.ProjectName,
             };
             _context.Projects.Add(p);
@@ -81,7 +82,7 @@ namespace TimeTracker.Controllers
             {
                 ProjectId = p.ProjectId,
                 ProjectName = p.ProjectName,
-                CustomerId = p.CustomerId,
+                CustomerId = p.Customer.Id,
             };
 
             return CreatedAtAction(nameof(GetOne), new { projectid = p.ProjectId }, pDto);

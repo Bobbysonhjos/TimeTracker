@@ -4,7 +4,9 @@
     {
         public int ProjectId { get; set; }
         public string ProjectName { get; set; }
-        public int CustomerId { get; set; }
-        
+        public Customer Customer { get; set; }
+
+        public List<TimeTracking> TimeTrackings { get; set; }=new List<TimeTracking>();
+
     }
 }

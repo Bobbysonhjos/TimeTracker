@@ -9,7 +9,10 @@ namespace TimeTracker.Entities
         public DateTime Date { get; set; }
         public int NumberofMinutes { get; set; }
         public string Description { get; set; }
-        public int  ProjectId { get; set; }
+        public Project Project { get; set; }
+
+    }
+
 
        
 
@@ -17,5 +20,4 @@ namespace TimeTracker.Entities
 
 
 
-    }
 }
